@@ -1,0 +1,37 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter stuff
+.ipynb_checkpoints/
+
+# OS clutter
+.DS_Store
+
+# Environments
+envs/
+.env
+.venv/
+*.sqlite
+hpc_config/
+references_bins/
+
+# Raw and intermediate data
+data/raw/
+data/scratch/
+data/assembly/protein/
+data/assembly/rnaSPAdes
+busco_downloads
+free.csv
+path_test.txt
+config.yaml
+
+# Big result folders
+data/logs/
+data/quality_control/
+data/quantification/
+data/annotation/
+
+# Snakemake logs
+submit_snakemake.*
+.snakemake/
