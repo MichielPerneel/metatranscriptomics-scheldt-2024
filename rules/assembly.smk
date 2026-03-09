@@ -14,6 +14,9 @@ rule rnaSPAdes:
                 out = os.path.join(config['log_dir'], 'rnaspades', '{sample}_rnaspades.out')
         params:
                 k = config['k_values']
+        threads: 32
+        resources:
+                mem_gb = 470
         shell:'''
         module load SPAdes
         spades.py --rna \
@@ -21,5 +24,7 @@ rule rnaSPAdes:
                 -2 {input.r2} \
                 -o {output.dir} \
                 -k {params.k} \
+                --threads {threads} \
+                --memory {resources.mem_gb} \
                 2> {log.err} 1> {log.out}
         '''

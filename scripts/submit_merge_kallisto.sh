@@ -9,5 +9,8 @@
 # Change directory to where the job was submitted from
 cd $PBS_O_WORKDIR
 
+# Activate the snakemake conda environment, which contains pandas
+source activate snakemake_7
+
 # Run the script
-python scripts/merge_kallisto.py -i data/quantification -o data/quantification/merged
+python scripts/merge_kallisto.py -i data/quantification -o data/quantification/

@@ -14,10 +14,11 @@
 
 ####  Account and return
 
-#PBS -M name@ugent.be
+#PBS -M nadine.rijsdijk@ugent.be
 #PBS -m ae
 
-#PBS -o /?/
+#PBS -o /scratch/gent/vo/000/gvo00081/metatranscriptomics-workflow-michiel-nadine/submit_snakemake.$PBS_JOBID.out
+#PBS -e /scratch/gent/vo/000/gvo00081/metatranscriptomics-workflow-michiel-nadine/submit_snakemake.$PBS_JOBID.err
 
 #### Load Snakemake conda environment
 source activate snakemake_7
@@ -30,5 +31,14 @@ if [ -d "$PBS_O_WORKDIR" ] ; then
     cd $PBS_O_WORKDIR
 fi
 
+mkdir -p /kyukon/scratch/gent/vo/000/gvo00081/{tmp,conda_pkgs,cache,pip_cache}/$USER
+
+export TMPDIR=/kyukon/scratch/gent/vo/000/gvo00081/tmp/$USER
+export TEMP=$TMPDIR
+export TMP=$TMPDIR
+export CONDA_PKGS_DIRS=/kyukon/scratch/gent/vo/000/gvo00081/conda_pkgs/$USER
+export XDG_CACHE_HOME=/kyukon/scratch/gent/vo/000/gvo00081/cache/$USER
+export PIP_CACHE_DIR=/kyukon/scratch/gent/vo/000/gvo00081/pip_cache/$USER
+
 # Initiating snakemake and running workflow in cluster mode
-snakemake --profile hpc_config/ --rerun-incomplete --use-conda --conda-prefix envs/ --conda-frontend conda --rerun-triggers mtime
+snakemake --profile hpc_config/ --rerun-incomplete --use-conda --conda-prefix envs/ --conda-frontend conda --rerun-triggers mtime --directory .

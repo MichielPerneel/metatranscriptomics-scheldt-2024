@@ -3,8 +3,8 @@ rule trimmomatic:
         This step removes sequencing adapters using Trimmomatic. 
         '''
         input:
-                r1 = os.path.join(config['raw_reads'], "{sample}_R1_001.fastq.gz"),
-                r2 = os.path.join(config['raw_reads'], "{sample}_R2_001.fastq.gz"),
+                r1 = os.path.join(config['raw_reads'], "{sample}_R1.fastq.gz"),
+                r2 = os.path.join(config['raw_reads'], "{sample}_R2.fastq.gz"),
         output:
                 r1 = os.path.join(config['scratch_dir'], "trimmed",
                                 "{sample}_1.trimmed.fastq.gz"),

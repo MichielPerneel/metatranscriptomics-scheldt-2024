@@ -3,7 +3,7 @@ rule cluster_assemblies:
         output:
                 metatranscriptome=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'metatranscriptome.fasta'),
         params:
-                percent_id = "0.98",
+                percent_id = "0.95",
                 mmseqs_clu=os.path.join(config['scratch_dir'], 'mmseqs_clustering', 'clusterDB'),
                 tmp=os.path.join(config['scratch_dir'], 'mmseqs_clustering')
         log: os.path.join(config['log_dir'], 'cluster_assemblies.log')
@@ -22,7 +22,7 @@ rule rename_transcripts:
         output:  os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta')
         params: length = 300
         log: os.path.join(config['log_dir'], 'rename_transcripts.log')
-        conda: "anvio-8"
+        conda: "anvio-9"
         shell:'''
         anvi-script-reformat-fasta {input} -o {output} -l {params.length} --simplify-names > {log} 2>&1
         '''

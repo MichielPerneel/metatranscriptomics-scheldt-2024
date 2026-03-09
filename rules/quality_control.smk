@@ -1,6 +1,6 @@
 rule fastqc:
         input:
-                os.path.join(config['raw_reads'], '{sample}_R{num}_001.fastq.gz')
+                os.path.join(config['raw_reads'], '{sample}_R{num}.fastq.gz')
         output:
                 html = os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.html'),
                 zip = os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.zip')

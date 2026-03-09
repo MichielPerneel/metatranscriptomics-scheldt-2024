@@ -17,28 +17,25 @@ rule create_pfam_mmseqs_db:
     '''
 
 rule predict_long_orfs:
-    """
-    Predict long ORFs from the metatranscriptome using TransDecoder.LongOrfs.
-    """
     input:
         metatranscriptome=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta')
     output:
-        longORFs_pep=os.path.join(config['output_dir'], 'assembly', 'protein', 'final_metatranscriptome.fasta.transdecoder_dir', 'longest_orfs.pep')
+        longORFs_pep=os.path.join(config['output_dir'], 'assembly', 'protein',
+                                  'final_metatranscriptome.fasta.transdecoder_dir', 'longest_orfs.pep')
     params:
-        protein_dir = os.path.join(config['output_dir'], 'assembly', 'protein')
+        protein_dir=os.path.join(config['output_dir'], 'assembly', 'protein'),
+        min_aa=150
     log:
         os.path.join(config['log_dir'], 'protein', 'predict_long_orfs.log')
-    shell:'''
+    shell: r"""
         unset OMP_PROC_BIND
         module load TransDecoder
         module load Perl-bundle-CPAN/5.36.1-GCCcore-12.3.0
+        set -euo pipefail
 
         cd {params.protein_dir}
-
-        TransDecoder.LongOrfs -t {input.metatranscriptome} > {log} 2>&1
-
-        touch {output.longORFs_pep}
-    '''
+        TransDecoder.LongOrfs -t {input.metatranscriptome} -m {params.min_aa} > {log} 2>&1
+    """
 
 rule create_longorfs_mmseqs_db:
     input:
@@ -54,66 +51,86 @@ rule create_longorfs_mmseqs_db:
     '''
 
 rule mmseqs_pfam_search:
-    """
-    Search for protein domains using mmseqs.
-    """
     input:
-        longORFs_pep=os.path.join(config['scratch_dir'], 'longest_orfs_mmseqs_db'),
-        pfam_mmseqs_db=os.path.join(config['pfam_dir'], 'pfam_mmseqs_db')
+        query_db=os.path.join(config['scratch_dir'], 'longest_orfs_mmseqs_db'),
+        pfam_db=os.path.join(config['pfam_dir'], 'pfam_mmseqs_db')
     output:
-        pfam_hits=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_mmseqs_hits.m8')
+        m8=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_mmseqs_hits.m8')
     params:
-        longORFs_dir=os.path.join(config['output_dir'], 'assembly', 'protein'),
         tmp=os.path.join(config['scratch_dir'], 'longorfs_pfam_tmp'),
-        hits=os.path.join(config['scratch_dir'], 'pfam_mmseqs')
+        hits=os.path.join(config['scratch_dir'], 'pfam_mmseqs_hits_db')
     threads: 60
     resources:
         mem_mb=200000
     log:
         os.path.join(config['log_dir'], 'protein', 'mmseqs_pfam_search.log')
-    shell:'''
+    shell: r"""
         unset OMP_PROC_BIND
         module load MMseqs2
+        set -euo pipefail
 
-        cd {params.longORFs_dir}
+        mmseqs search {input.query_db} {input.pfam_db} {params.hits} {params.tmp} \
+            -s 7 -e 1e-2 --cov-mode 0 --threads {threads} > {log} 2>&1
 
-        mmseqs search {input.longORFs_pep} {input.pfam_mmseqs_db} {params.hits} {params.tmp} -s 7 -e 1e-2 --cov-mode 0 > {log} 2>&1
+        # keep only best hit per query to reduce file size
+        mmseqs filterdb {params.hits} {params.hits}.filtered --extract-lines 1 >> {log} 2>&1
 
-        mmseqs filterdb {params.hits} {params.hits}.filtered --extract-lines 10 > {log} 2>&1
+        mmseqs convertalis {input.query_db} {input.pfam_db} {params.hits}.filtered {output.m8} >> {log} 2>&1
+    """
 
-        mmseqs convertalis {input.longORFs_pep} {input.pfam_mmseqs_db} {params.hits}.filtered {output.pfam_hits} > {log} 2>&1
-        '''
+rule pfam_hit_transcript_ids:
+    input:
+        m8=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_mmseqs_hits.m8')
+    output:
+        ids=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_hit_transcript_ids.txt')
+    shell: r"""
+    cut -f1 {input.m8} \
+    sed -E 's/\.p[0-9]+$//' \
+    sort -u > {output.ids}
+    """
+
+rule filter_transcriptome_by_pfam:
+    input:
+        fasta=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta'),
+        ids=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_hit_transcript_ids.txt')
+    output:
+        fasta_filt=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.pfamhit.fasta')
+    log:
+        os.path.join(config['log_dir'], 'protein', 'filter_transcriptome_by_pfam.log')
+    shell: r"""
+    module load SeqKit
+    seqkit grep -f {input.ids} {input.fasta} > {output.fasta_filt} 2> {log}
+    """
 
 rule predict_proteins:
-    """
-    Predict proteins using TransDecoder.Predict and retain mmseqs hits.
-    """
     input:
-        metatranscriptome=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta'),
-        pfam_hits=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_mmseqs_hits.m8'),
-        longORFs_pep=os.path.join(config['output_dir'], 'assembly', 'protein', 'final_metatranscriptome.fasta.transdecoder_dir', 'longest_orfs.pep')
+        metatranscriptome=os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.pfamhit.fasta')
     output:
         bed=os.path.join(config['output_dir'], 'assembly', 'protein', 'metatranscriptome.bed'),
         cds=os.path.join(config['output_dir'], 'assembly', 'protein', 'metatranscriptome.cds'),
         gff3=os.path.join(config['output_dir'], 'assembly', 'protein', 'metatranscriptome.gff3'),
         pep=os.path.join(config['output_dir'], 'assembly', 'protein', 'metatranscriptome.pep')
     params:
-        longORFs_dir=os.path.join(config['output_dir'], 'assembly', 'protein'),
+        workdir=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfamhit_transdecoder')
     log:
-        os.path.join(config['log_dir'], 'protein', 'predict_proteins.log')
-    shell:'''
-        unset OMP_PROC_BIND
-        module load TransDecoder
-        module load Perl-bundle-CPAN/5.36.1-GCCcore-12.3.0 
+        os.path.join(config['log_dir'], 'protein', 'predict_proteins_pfamhit.log')
+    threads: 16
+    resources:
+        mem_mb=200000
+    shell: r"""
+    unset OMP_PROC_BIND
+    module load TransDecoder
+    module load Perl-bundle-CPAN/5.36.1-GCCcore-12.3.0
+    set -euo pipefail
 
-        cd {params.longORFs_dir}
+    mkdir -p {params.workdir}
+    cd {params.workdir}
 
-        TransDecoder.Predict -t {input.metatranscriptome} \
-                --single_best_only \
-                --retain_pfam_hits {input.pfam_hits} > {log} 2>&1
+    TransDecoder.LongOrfs -t {input.metatranscriptome} > {log} 2>&1
+    TransDecoder.Predict -t {input.metatranscriptome} --single_best_only >> {log} 2>&1
 
-        mv {params.longORFs_dir}/final_metatranscriptome.fasta.transdecoder.bed {output.bed}
-        mv {params.longORFs_dir}/final_metatranscriptome.fasta.transdecoder.cds {output.cds}
-        mv {params.longORFs_dir}/final_metatranscriptome.fasta.transdecoder.gff3 {output.gff3}
-        mv {params.longORFs_dir}/final_metatranscriptome.fasta.transdecoder.pep {output.pep}
-    '''
+    mv final_metatranscriptome.pfamhit.fasta.transdecoder.bed  {output.bed}
+    mv final_metatranscriptome.pfamhit.fasta.transdecoder.cds  {output.cds}
+    mv final_metatranscriptome.pfamhit.fasta.transdecoder.gff3 {output.gff3}
+    mv final_metatranscriptome.pfamhit.fasta.transdecoder.pep  {output.pep}
+    """
