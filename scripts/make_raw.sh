@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 shopt -s nullglob
-SRC="/user/scratch/gent/vo/000/gvo00081/vsc47816/Metatranscriptome_Scheldt_2025_05"
-DEST="/user/scratch/gent/vo/000/gvo00081/vsc47816/metatranscriptomics-workflow/data/raw"
+SRC="${1:?usage: make_raw.sh <source_dir> <dest_dir>}"
+DEST="${2:?usage: make_raw.sh <source_dir> <dest_dir>}"
 
 mkdir -p "$DEST"
 

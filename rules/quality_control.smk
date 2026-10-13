@@ -11,20 +11,23 @@ rule fastqc:
 
 rule multiqc:
         input:
-            qc_files = expand(os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.{ext}'), sample=samples, num=[1, 2], ext=['html', 'zip'])
+            qc_files = expand(os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.zip'),
+                              sample=samples, num=[1, 2])
         output:
-            report = os.path.join(config['output_dir'], 'quality_control', 'multiqc_report.html'),
-            data_dir = directory(os.path.join(config['scratch_dir'], 'multiqc_data'))
+            report = os.path.join(config['output_dir'], 'quality_control', 'multiqc_report.html')
+        params:
+            outdir = os.path.join(config['output_dir'], 'quality_control'),
+            tmpdir = os.path.join(config['scratch_dir'], 'tmp_multiqc')
         log:
-            os.path.join(config['output_dir'], 'logs', 'multiqc', 'multiqc.log')
+            os.path.join(config['log_dir'], 'multiqc', 'multiqc.log')
         shell:"""
         module load MultiQC
-        export TMPDIR={config[scratch_dir]}/tmp_multiqc
+        export TMPDIR={params.tmpdir}
         mkdir -p $TMPDIR
 
-        multiqc {input} \
-           --force \
-            -o {output.data_dir} \
+        multiqc {input.qc_files} \
+            --force \
+            -o {params.outdir} \
             -n multiqc_report.html \
-             &> {log}
-         """
+            > {log} 2>&1
+        """

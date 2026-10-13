@@ -69,13 +69,6 @@ mmseqs_pfam_search:
         queue: 
         walltime: "01:00:00"
 
-pfam_hmmscan:
-        nodes: 1
-        ppn: 32
-        mem: "120gb"
-        queue: 
-        walltime: "06:00:00"
-
 predict_proteins:
         nodes: 1
         ppn: 32
@@ -103,13 +96,6 @@ eukprot_annotation:
         mem: "450gb"
         queue: 
         walltime: "24:00:00"
-
-eukulele_eukprot:
-        nodes: 1
-        ppn: 60
-        mem: "150gb"
-        queue: 
-        walltime: "48:00:00"
 
 eukulele:
         nodes: 1

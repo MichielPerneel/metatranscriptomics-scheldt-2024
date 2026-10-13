@@ -1,0 +1,17 @@
+cluster-config: "hpc_config/cluster.yaml"
+cluster: "ssh login.gent.vsc '
+  export BASE=/kyukon/scratch/gent/vo/000/gvo00081;
+  mkdir -p $BASE/{{tmp,conda_pkgs,cache,pip_cache}}/$USER;
+  export TMPDIR=$BASE/tmp/$USER;
+  export TEMP=$TMPDIR;
+  export TMP=$TMPDIR;
+  export CONDA_PKGS_DIRS=$BASE/conda_pkgs/$USER;
+  export XDG_CACHE_HOME=$BASE/cache/$USER;
+  export PIP_CACHE_DIR=$BASE/pip_cache/$USER;
+  module swap cluster/{cluster.queue} && qsub -V -N {cluster.jobname} \
+    -l nodes={cluster.nodes}:ppn={cluster.ppn},mem={cluster.mem},walltime={cluster.walltime} \
+    -M {cluster.email} -m {cluster.mailon} -j {cluster.jobout} -o {cluster.outdir}
+'"
+jobs: 20
+verbose: true
+notemp: true

@@ -9,11 +9,10 @@ __pycache__/
 .DS_Store
 
 # Environments
-envs/
 .env
 .venv/
 *.sqlite
-hpc_config/
+/hpc_config/
 references_bins/
 
 # Raw and intermediate data
@@ -24,7 +23,7 @@ data/assembly/rnaSPAdes
 busco_downloads
 free.csv
 path_test.txt
-config.yaml
+/config.yaml
 
 # Big result folders
 data/logs/

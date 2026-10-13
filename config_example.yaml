@@ -13,7 +13,6 @@ conda_environments:
 scripts_directory: 
 
 pfam: 
-pfam_hmm: 
 pfam_dir: 
 eukprot_ref_fa: 
 eukprot_ref_dir: 
