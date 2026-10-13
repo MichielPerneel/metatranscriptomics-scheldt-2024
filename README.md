@@ -5,60 +5,22 @@ The workflow was developed for the UGent HPC (VSC, PBS/Torque scheduler) and use
 
 Contact: Nadine Rijsdijk, Michiel Perneel
 
-## Workflow overview
-
+## Workflow
 ```mermaid
 flowchart TD
-    raw["Raw reads<br/>{sample}_R1/R2.fastq.gz"] --> fastqc["FastQC<br/>(+ MultiQC, manual)"]
-    raw --> trim["Trimmomatic<br/>adapter & quality trimming"]
-    trim --> ribo["RiboDetector<br/>rRNA removal"]
-    ribo --> spades["rnaSPAdes<br/>per-sample assembly"]
-    spades --> clust["MMseqs2 easy-linclust<br/>95% identity clustering"]
-    clust --> rename["anvi-script-reformat-fasta<br/>≥300 nt, simplified names"]
-    rename --> final[("final_metatranscriptome.fasta")]
-
-    final --> lorfs["TransDecoder.LongOrfs<br/>≥150 aa"]
-    lorfs --> pfam["MMseqs2 search vs Pfam-A profiles"]
-    pfam --> filt["SeqKit: keep transcripts with Pfam hit"]
-    filt --> pred["TransDecoder.Predict<br/>single best ORF"]
-    pred --> pep[("metatranscriptome.pep")]
-
-    pep --> eggnog["eggNOG-mapper<br/>functional annotation"]
-    pep --> eukulele["EUKulele + PhyloDB<br/>taxonomy"]
-    final --> kraken["Kraken2<br/>contig taxonomy"]
-    ribo --> krakenr["Kraken2<br/>read taxonomy per sample"]
-    final --> kidx["kallisto index"]
-    ribo --> kq["kallisto quant per sample"]
-    kidx --> kq
-    kq --> merge["merge_kallisto.py<br/>count.csv / tpm.csv (manual)"]
+    A[Raw paired-end reads] --> B[QC: FastQC]
+    A --> C[Trimming: Trimmomatic]
+    C --> D[rRNA removal: RiboDetector]
+    D --> E[Per-sample assembly: rnaSPAdes]
+    E --> F[Clustering: MMseqs2]
+    F --> G[(Metatranscriptome)]
+    G --> H[Protein prediction: TransDecoder + Pfam]
+    H --> I[Functional annotation: eggNOG-mapper]
+    H --> J[Taxonomy: EUKulele]
+    G --> K[Taxonomy: Kraken2]
+    D --> L[Quantification: kallisto]
+    G --> L
 ```
-
-### Steps in detail
-
-| Step | Rule (file) | Tool | Key settings | Output |
-|---|---|---|---|---|
-| Read QC | `fastqc` (`quality_control.smk`) | FastQC (wrapper 0.27.1) | – | `quality_control/fastqc/` |
-| QC summary | `multiqc` (`quality_control.smk`) | MultiQC | not in `rule all`, run on request | `quality_control/multiqc_report.html` |
-| Trimming | `trimmomatic` (`preprocessing.smk`) | Trimmomatic 0.39 | `ILLUMINACLIP:adapters:2:30:7 LEADING:2 TRAILING:2 SLIDINGWINDOW:4:2 MINLEN:50` | `scratch/trimmed/` |
-| rRNA removal | `sample_rRNA_cleanup` (`preprocessing.smk`) | RiboDetector (CPU) | `-e rrna -l 140`, 20 threads | `scratch/cleanup/`, `scratch/rRNA/` |
-| Assembly | `rnaSPAdes` (`assembly.smk`) | SPAdes `--rna` | k = 75, 99, 127; 32 threads; 470 GB | `assembly/rnaSPAdes/{sample}/transcripts.fasta` |
-| Clustering | `cluster_assemblies` (`cluster_assemblies.smk`) | MMseqs2 `easy-linclust` | `--min-seq-id 0.95` | `assembly/rnaSPAdes/metatranscriptome.fasta` |
-| Length filter & renaming | `rename_transcripts` (`cluster_assemblies.smk`) | anvi'o `anvi-script-reformat-fasta` | `-l 300 --simplify-names` | `assembly/rnaSPAdes/final_metatranscriptome.fasta` |
-| Pfam profile DB | `create_pfam_mmseqs_db` (`protein_prediction.smk`) | MMseqs2 `convertmsa` / `msa2profile` | built once from the Pfam-A MSA | `{pfam_dir}/pfam_mmseqs_db` |
-| Candidate ORFs | `predict_long_orfs` | TransDecoder.LongOrfs | `-m 150` | `assembly/protein/…transdecoder_dir/longest_orfs.pep` |
-| Pfam screen | `create_longorfs_mmseqs_db`, `mmseqs_pfam_search`, `pfam_hit_transcript_ids` | MMseqs2 | `-s 7 -e 1e-2`, best hit per ORF | `assembly/protein/pfam_mmseqs_hits.m8` |
-| Pfam-hit subset | `filter_transcriptome_by_pfam` | SeqKit `grep` | – | `assembly/rnaSPAdes/final_metatranscriptome.pfamhit.fasta` |
-| Protein prediction | `predict_proteins` | TransDecoder.LongOrfs + Predict | `--single_best_only` | `assembly/protein/metatranscriptome.{pep,cds,gff3,bed}` |
-| Functional annotation | `functional_annotation` (`functional_annotation.smk`) | eggNOG-mapper (`-m mmseqs --dbmem`) | 60 threads | `annotation/functional_eggnog/functional_annotation.emapper.annotations` |
-| Taxonomy (proteins) | `eukulele` (`taxonomic_annotation.smk`) | EUKulele with PhyloDB | `--mets_or_mags mets` | `annotation/taxonomy_eukulele/` |
-| Taxonomy (contigs) | `kraken_annotation` | Kraken2 | custom DB (`taxonomy_db_diatom2024`) | `annotation/kraken/{report,output}.tsv` |
-| Taxonomy (reads) | `kraken_read_annotation` | Kraken2 `--paired` | same DB | `annotation/kraken_reads/{sample}.report.tsv` |
-| Taxonomy (EukProt, optional) | `create_eukprot_db`, `create_metatranscriptome_db`, `eukprot_annotation` | MMseqs2 search, `-s 6` | commented out in `rule all` | `annotation/taxonomy_eukprot/eukprot_annotation.m8` |
-| Quantification | `kallisto_index`, `kallisto_quant` (`quantification.smk`) | kallisto (wrapper v1.15.0) | index on the full `final_metatranscriptome.fasta` | `quantification/{sample}/abundance.tsv` |
-| Count matrix | `scripts/merge_kallisto.py` | pandas | run after the workflow | `quantification/count.csv`, `quantification/tpm.csv` |
-
-Paths in the *Output* column are relative to `output_dir` (or `scratch_dir` where marked
-`scratch/`). Logs go to `log_dir`.
 
 Notes:
 
@@ -111,9 +73,7 @@ conda env create -f envs/snakemake_7.yml
 conda activate snakemake_7
 ```
 
-**Environment modules** (loaded inside rules with `module load`; names as on the UGent
-HPC):
-
+**Environment modules** (loaded inside rules with `module load`; names as on the UGent HPC):
 - `SPAdes`
 - `MMseqs2`
 - `Trimmomatic/0.39-Java-11`
@@ -123,10 +83,9 @@ HPC):
 - `MultiQC`
 
 **Conda environments** used by rules:
-
-| Rule | `conda:` directive | What you need to provide |
+| Rule | `conda:` directive | needs to contain |
 |---|---|---|
-| `sample_rRNA_cleanup` | `{conda_environments}/ribodetector.yaml` | an env file with `ribodetector` (bioconda) in the folder set as `conda_environments` |
+| `sample_rRNA_cleanup` | `{conda_environments}/ribodetector.yaml` | |
 | `rename_transcripts` | `anvio-9` | a pre-existing **named** conda env with anvi'o 9 |
 | `eukulele` | `EUKulele` | a named env with EUKulele; **pin `pandas<3`** |
 | `kraken_annotation`, `kraken_read_annotation` | `kraken` | a named env with Kraken2 |
@@ -145,12 +104,6 @@ Set the paths in `config.yaml` (see below):
 - **Kraken2 database** → `taxonomy_db_diatom2024` (the project used a custom 2024 DB with
   extended diatom coverage).
 - *Optional:* **EukProt** protein FASTA → `eukprot_ref_fa` / `eukprot_ref_dir`.
-
-### Compute
-
-Several steps are large. The defaults in `rules/` and `hpc_config_example/cluster.yaml`
-request, for example, 32 cores / ~400–470 GB for rnaSPAdes, 350 GB for clustering,
-up to 450 GB for protein prediction and 400 GB for kallisto. Plan for a fat-memory node.
 
 ## Setup
 
@@ -308,6 +261,6 @@ quantification/{count,tpm}.csv                          # after merge_kallisto.p
 ```
 
 ## Citation
-If you use this workflow, please cite the tools it builds on: FastQC, MultiQC,
+If you use this workflow, remember to cite the tools it builds on: FastQC, MultiQC,
 Trimmomatic, RiboDetector, SPAdes/rnaSPAdes, MMseqs2, anvi'o, TransDecoder, Pfam, SeqKit,
 eggNOG-mapper, EUKulele, PhyloDB, Kraken2, EukProt and kallisto, as well as Snakemake.
