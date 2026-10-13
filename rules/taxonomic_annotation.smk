@@ -63,7 +63,7 @@ rule eukulele:
         eukulele_directory = os.path.join(config['output_dir'], 'annotation', 'taxonomy_eukulele'),
         eukulele_reference_dir = config['eukulele_phylodb_ref_dir'],
         reference_pep_fa_gz = config['eukulele_phylodb_ref_fa'],
-    conda: 'EUKulele'
+    conda: 'EUKulele' # This environment should have pandas<3!
     threads: 32
     log: os.path.join(config['log_dir'], 'eukulele_eukprot.log')
     shell:'''
@@ -96,3 +96,25 @@ rule kraken_annotation:
         --output {output.annotation} \
         {input.metatranscriptome} > {log} 2>&1
     '''
+
+rule kraken_read_annotation:
+    input:
+        r1=os.path.join(config['scratch_dir'], 'cleanup', '{sample}_1.rRNA_removed.fastq.gz'),
+        r2=os.path.join(config['scratch_dir'], 'cleanup', '{sample}_2.rRNA_removed.fastq.gz')
+    output:
+        report=os.path.join(config['output_dir'], 'annotation', 'kraken_reads', '{sample}.report.tsv')
+    params:
+        kraken_db=config['taxonomy_db_diatom2024']
+    threads: 16
+    resources:
+        mem_mb=40000
+    conda: 'kraken'
+    log: os.path.join(config['log_dir'], 'kraken_reads', '{sample}.log')
+    shell: r"""
+    kraken2 --threads {threads} \
+        --db {params.kraken_db} \
+        --paired --gzip-compressed \
+        --report {output.report} \
+        --output - \
+        {input.r1} {input.r2} 2> {log}
+    """

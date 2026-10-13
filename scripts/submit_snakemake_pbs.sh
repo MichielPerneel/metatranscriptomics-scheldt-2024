@@ -9,7 +9,7 @@
 
 ####  Resources
 
-#PBS -l nodes=1:ppn=1,mem=16000mb
+#PBS -l nodes=1:ppn=1,mem=12000mb
 #PBS -l walltime=72:00:00
 
 ####  Account and return
@@ -21,7 +21,8 @@
 #PBS -e /scratch/gent/vo/000/gvo00081/metatranscriptomics-workflow-michiel-nadine/submit_snakemake.$PBS_JOBID.err
 
 #### Load Snakemake conda environment
-source activate snakemake_7
+source $VSC_DATA/miniforge3/etc/profile.d/conda.sh
+conda activate $VSC_DATA_VO_USER/envs/snakemake_7
 
 ##################
 
@@ -41,4 +42,5 @@ export XDG_CACHE_HOME=/kyukon/scratch/gent/vo/000/gvo00081/cache/$USER
 export PIP_CACHE_DIR=/kyukon/scratch/gent/vo/000/gvo00081/pip_cache/$USER
 
 # Initiating snakemake and running workflow in cluster mode
-snakemake --profile hpc_config/ --rerun-incomplete --use-conda --conda-prefix envs/ --conda-frontend conda --rerun-triggers mtime --directory .
+snakemake --profile hpc_config/ --use-conda --conda-prefix envs/ \
+          --rerun-triggers mtime input

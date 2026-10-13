@@ -33,12 +33,16 @@ rule all:
        expand(os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.html'),
               sample=samples, num=[1, 2]),
        expand(os.path.join(config['output_dir'], 'quality_control', 'fastqc', '{sample}_R{num}_fastqc.zip'),
-              sample=samples, num=[1, 2]),
-       #os.path.join(config['output_dir'], 'quality_control', 'multiqc_report.html'),
-       expand(os.path.join(config['output_dir'], "assembly", "rnaSPAdes", "{sample}", "transcripts.fasta"), sample=samples),
-       os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta'),
-       #os.path.join(config['output_dir'], 'annotation', 'taxonomy_eukprot', 'eukprot_annotation.m8'),
-       os.path.join(config['output_dir'], 'annotation', 'functional_eggnog', 'functional_annotation.emapper.annotations'),
-       expand(os.path.join(config['output_dir'], 'quantification', '{sample}'), sample=samples),
-       #os.path.join(config['output_dir'], 'annotation', 'taxonomy_eukulele', 'EUKulele_done.txt'),
-       os.path.join(config['output_dir'], 'annotation', 'kraken', 'output.tsv')
+              sample=samples, num=[1, 2]), # Quality control
+       #os.path.join(config['output_dir'], 'quality_control', 'multiqc_report.html'), # MultiQC report is not automatically generated, run manually
+       expand(os.path.join(config['output_dir'], "assembly", "rnaSPAdes", "{sample}", "transcripts.fasta"), sample=samples), # Run assembly for every sample
+       os.path.join(config['output_dir'], 'assembly', 'rnaSPAdes', 'final_metatranscriptome.fasta'), # Generate final assembly combining transcripts assembled across samples
+       os.path.join(config['output_dir'], 'annotation', 'functional_eggnog', 'functional_annotation.emapper.annotations'), # Functional annotation using eggnog-mapper
+       expand(os.path.join(config['output_dir'], 'quantification', '{sample}'), sample=samples), # Quantification using kallisto
+       os.path.join(config['output_dir'], 'annotation', 'taxonomy_eukulele', 'EUKulele_done.txt'), # Taxonomic annotation using EUKulele (& PhyloDB)
+       #os.path.join(config['output_dir'], 'annotation', 'taxonomy_eukprot', 'eukprot_annotation.m8'), # Taxonomic annotation using MMseqs and Eukprot
+       os.path.join(config['output_dir'], 'annotation', 'kraken', 'output.tsv'), # Run kraken on the clustered metatranscriptome
+       expand(os.path.join(config['output_dir'], 'annotation', 'kraken_reads', '{sample}.report.tsv'), sample=samples) # Run kraken on every sample assembly
+       
+
+# After completion, count files can be merged by submitting the merge_kallisto.py script (using submit_merge_kallisto.sh script)

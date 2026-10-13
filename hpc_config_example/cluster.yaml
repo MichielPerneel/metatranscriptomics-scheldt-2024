@@ -1,0 +1,154 @@
+__default__:
+        jobname: "{rule}.{wildcards}"
+        nodes: 1
+        ppn: 8
+        mem: "8gb"
+        walltime: "06:00:00"
+        account: 
+        email: 
+        mailon: "ae"
+        jobout: "oe"
+        queue:
+        outdir:
+
+fastqc:
+        walltime: "06:00:00"
+        queue: 
+        mem: "16gb"
+        ppn: 12
+
+trimmomatic:
+        walltime: "01:30:00"
+
+sample_rRNA_cleanup:
+        nodes: 1
+        ppn: 20
+        mem: "30gb"
+        queue: 
+        walltime: "08:00:00"
+
+rnaSPAdes:
+        nodes: 1
+        ppn: 32
+        mem: "400gb"
+        queue: 
+        walltime: "72:00:00"
+
+cluster_assemblies:
+        nodes: 1
+        ppn: 32
+        mem: "350gb"
+        queue: 
+        walltime: "72:00:00"
+
+create_pfam_mmseqs_db:
+        nodes: 1
+        ppn: 30
+        mem: "60gb"
+        queue: 
+        walltime: "00:30:00"
+
+predict_long_orfs:
+        nodes: 1
+        ppn: 30
+        mem: "60gb"
+        queue: 
+        walltime: "12:00:00"
+
+create_longorfs_mmseqs_db:
+        nodes: 1
+        ppn: 30
+        mem: "60gb"
+        queue: 
+        walltime: "00:30:00"
+
+mmseqs_pfam_search:
+        nodes: 1
+        ppn: 60
+        mem: "200gb"
+        queue: 
+        walltime: "01:00:00"
+
+pfam_hmmscan:
+        nodes: 1
+        ppn: 32
+        mem: "120gb"
+        queue: 
+        walltime: "06:00:00"
+
+predict_proteins:
+        nodes: 1
+        ppn: 32
+        mem: "450gb"
+        queue: 
+        walltime: "48:00:00"
+
+create_eukprot_db:
+        nodes: 1
+        ppn: 30
+        mem: "60gb"
+        queue: 
+        walltime: "00:30:00"
+
+create_metatranscriptome_db:
+        nodes: 1
+        ppn: 30
+        mem: "60gb"
+        queue: 
+        walltime: "00:30:00"
+
+eukprot_annotation:
+        nodes: 1
+        ppn: 60
+        mem: "450gb"
+        queue: 
+        walltime: "24:00:00"
+
+eukulele_eukprot:
+        nodes: 1
+        ppn: 60
+        mem: "150gb"
+        queue: 
+        walltime: "48:00:00"
+
+eukulele:
+        nodes: 1
+        ppn: 32
+        mem: "150gb"
+        queue: 
+        walltime: "48:00:00"
+
+kraken_annotation:
+        nodes: 1
+        ppn: 16
+        mem: "150gb"
+        queue: 
+        walltime: "02:00:00"
+
+kraken_read_annotation:
+        nodes: 1
+        ppn: 16
+        mem: "40gb"
+        queue: 
+        walltime: "02:00:00"
+
+functional_annotation:
+        nodes: 1
+        ppn: 60
+        mem: "150gb"
+        queue: 
+        walltime: "48:00:00"
+
+kallisto_index:
+        nodes: 1
+        ppn: 60
+        mem: "400gb"
+        queue: 
+        walltime: "12:00:00"
+
+kallisto_quant:
+        nodes: 1
+        ppn: 24
+        mem: "400gb"
+        queue: 
+        walltime: "06:00:00"

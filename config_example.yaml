@@ -1,0 +1,25 @@
+home_dir: 
+samples: 
+raw_reads: 
+output_dir: 
+scratch_dir: 
+log_dir: 
+k_values: 
+  - 75
+  - 99
+  - 127
+adapters: 
+conda_environments: 
+scripts_directory: 
+
+pfam: 
+pfam_hmm: 
+pfam_dir: 
+eukprot_ref_fa: 
+eukprot_ref_dir: 
+eggnog_ref_dir: 
+
+eukulele_phylodb_ref_dir: 
+eukulele_phylodb_ref_fa:
+
+taxonomy_db_diatom2024: 

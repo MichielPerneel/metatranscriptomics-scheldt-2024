@@ -12,8 +12,8 @@ rule create_pfam_mmseqs_db:
     unset OMP_PROC_BIND
     module load MMseqs2
     mmseqs convertmsa {input} {params.msa_db} > {log} 2>&1
-    mmseqs msa2profile {params.msa_db} {output} --match-mode 1 > {log} 2>&1
-    mmseqs createindex {output} {params.tmp} -k 5 -s 7 > {log} 2>&1
+    mmseqs msa2profile {params.msa_db} {output} --match-mode 1 >> {log} 2>&1
+    mmseqs createindex {output} {params.tmp} -k 5 -s 7 >> {log} 2>&1
     '''
 
 rule predict_long_orfs:
@@ -85,8 +85,8 @@ rule pfam_hit_transcript_ids:
         ids=os.path.join(config['output_dir'], 'assembly', 'protein', 'pfam_hit_transcript_ids.txt')
     shell: r"""
     cut -f1 {input.m8} \
-    sed -E 's/\.p[0-9]+$//' \
-    sort -u > {output.ids}
+    | sed -E 's/\.p[0-9]+$//' \
+    | sort -u > {output.ids}
     """
 
 rule filter_transcriptome_by_pfam:
